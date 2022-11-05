@@ -14,19 +14,24 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-typedef struct memory_block {
+typedef struct page {
+  page_header* block;
+  void* data;
+} page;
+
+typedef struct page_header {
   int size;      // how many pages the block is
   void* next;    // pointer to next page as part of this block
   bool is_free;  // true if block is free
   bool on_disk;  // true if page is on disk
-} memory_block;
+} page_header;
 
 typedef struct primary_memory_page_list {
-  memory_block* blocks[2048];
+  page* blocks[2048];
   int count;
 } primary_memory_page_list_t;
 
 typedef struct disk_page_list {
-  memory_block* blocks[2048];
+  page* blocks[2048];
   int count;
 } disk_page_list_t;
