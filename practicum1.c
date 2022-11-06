@@ -22,7 +22,8 @@ typedef struct page {
 
 // header has important metadata
 typedef struct page_header {
-  int size;      // how many bytes allocated in the page
+  void* start;   // pointer to start of page
+  size_t size;   // how many bytes allocated in the page
   void* next;    // pointer to next page as part of this block
   bool is_free;  // true if block is free
   bool on_disk;  // true if page is on disk
@@ -34,16 +35,16 @@ typedef struct page_list {
   int count;
 } page_list;
 
-
 /******************************
  *******GLOBAL VARIABLES*******
  ******************************/
-page_list* primary_memory_page_list;  // track what pages are in primary memory (RAM
-page_list* disk_page_list;  // track what pages are in disk memory
-page_list* free_list;       // track of pages that are free in heap
+page_list*
+    primary_memory_page_list;  // track what pages are in primary memory (RAM
+page_list* disk_page_list;     // track what pages are in disk memory
+page_list* free_list;          // track of pages that are free in heap
 page* heap;
-size_t heap_size = 0;  // keep track of how many PAGES are allocated in heap (1 = 4096 KB allocated)
-
+size_t heap_size = 0;  // keep track of how many PAGES are allocated in heap (1
+                       // = 4096 KB allocated)
 
 /**
  * Insert a specified block of memory into the free list.
@@ -94,35 +95,24 @@ void free_list_print() {
 /**
  * Allocate specified amount memory.
  * ASSUMPTION: Nobody will request more than 4096 KB (page size)
- * 
- * 
+ *
  * @param   size    Amount of bytes to allocate.
  * @return  Pointer to the requested amount of memory.
  **/
-void* pm_malloc(size_t size) {
-  if (!size || size < 1 || size > PAGE_SIZE) {
+page* pm_malloc(size_t size) {
+  if (!size || size < 1) {
     return NULL;
   }
-  // check if we have enough space
-  assert(heap_size + size <= HEAP_CAPACITY);
-  heap_size += size;
-  void* ret_address = heap + heap_size;
-
-  /*
-  const page block = {
-      .address = result,
-      .size = size,
-  };
-
-  // find out how many pages to alloc based on 4096 byte pages
-  size_t pages = size / PAGE_SIZE;
-  if (size % PAGE_SIZE) {
-    pages++;
-  }
-  page_count += pages;
-
-  page_list.blocks[page_list.count++] = block;
-  */
+  // check if we have enough space (in pages) in heap
+  assert(heap_size + 1 <= HEAP_CAPACITY / PAGE_SIZE);
+  heap_size++;
+  page* ret_address = heap + (heap_size * PAGE_SIZE);
+  ret_address->header->is_free = false;
+  ret_address->header->size = size;
+  ret_address->header->start = ret_address;
+  ret_address->header->next = NULL;
+  ret_address->header->on_disk = false;
+  ret_address->data = BLOCK_DATA(ret_address);
 
   return ret_address;
 }
@@ -134,14 +124,16 @@ void* pm_malloc(size_t size) {
  * @param   block   Pointer to block to release.
  * @return  Whether or not the release completed successfully.
  */
-bool pm_free(page* block) {
+void pm_free(page* block) {
   if (block == NULL) {
-    return false;
+    return;
   }
+  block->header->is_free = true;
+
   // find block in page_list
   // remove block from page_list
   // add block to free_list
-  return true;
+  return;
 }
 
 void initialize_heap() {
@@ -149,16 +141,16 @@ void initialize_heap() {
   heap[HEAP_CAPACITY];
   // Allocate all virtual memory structures within the block as well.
   // allocate memory for primary memory page list
-  //primary_memory_page_list = (primary_memory_page_list_t*)pm_malloc(sizeof(primary_memory_page_list_t));
+  primary_memory_page_list = (page_list*)pm_malloc(sizeof(page_list));
   // allocate memory for disk page list
-  //disk_page_list = (disk_page_list_t*)pm_malloc(sizeof(disk_page_list_t));
-  
+  disk_page_list = (page_list*)pm_malloc(sizeof(page_list));
+
   // initialize primary and disk page list
   primary_memory_page_list->count = 0;
   disk_page_list->count = 0;
   // initialize heap
   heap->header = (page_header*)pm_malloc(sizeof(page_header));
-  heap->header->size = HEAP_CAPACITY / PAGE_SIZE; // 2048 pages
+  heap->header->size = HEAP_CAPACITY / PAGE_SIZE;  // 2048 pages
   heap->header->next = NULL;
   heap->header->is_free = true;
   heap->header->on_disk = false;
