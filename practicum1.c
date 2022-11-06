@@ -35,7 +35,6 @@ typedef struct page_list {
 } page_list;
 
 
-
 /******************************
  *******GLOBAL VARIABLES*******
  ******************************/
@@ -43,11 +42,8 @@ page_list* primary_memory_page_list;  // track what pages are in primary memory 
 page_list* disk_page_list;  // track what pages are in disk memory
 page_list* free_list;       // track of pages that are free in heap
 page* heap;
+size_t heap_size = 0;  // keep track of how many PAGES are allocated in heap (1 = 4096 KB allocated)
 
-
-void* pm_malloc(int size) {
-
-}
 
 /**
  * Insert a specified block of memory into the free list.
@@ -97,11 +93,14 @@ void free_list_print() {
 
 /**
  * Allocate specified amount memory.
+ * ASSUMPTION: Nobody will request more than 4096 KB (page size)
+ * 
+ * 
  * @param   size    Amount of bytes to allocate.
  * @return  Pointer to the requested amount of memory.
  **/
 void* pm_malloc(size_t size) {
-  if (!size || size < 1) {
+  if (!size || size < 1 || size > PAGE_SIZE) {
     return NULL;
   }
   // check if we have enough space
