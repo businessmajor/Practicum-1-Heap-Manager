@@ -29,7 +29,7 @@ typedef struct page_header {
   bool on_disk;  // true if page is on disk
 } page_header;
 
-// keep track of pages in primary memory (RAM)
+// keep track of pages in primary memory (RAM), disk memory, and free list
 typedef struct page_list {
   page* blocks[2048];
   int count;
@@ -45,6 +45,22 @@ page_list* free_list;          // track of pages that are free in heap
 page* heap;
 size_t heap_size = 0;  // keep track of how many PAGES are allocated in heap (1
                        // = 4096 KB allocated)
+
+//
+// SHOULD WE KEEP TRACK OF FREE BLOCKS VIA FREE LIST, OR SHOULD WE JUST ITERATE
+// THROUGH THE HEAP??
+//
+
+// I THINK WE SHOULD ITERATE THROUGH HEAP AND FIND FREE PAGE BY CHECKING
+// page->is_free. USING FIRST FIT ALGORITHM (ITERATE THROUGH HEAP UNTIL WE FIND
+// FIRST FREE PAGE)
+
+// WHEN WE CALL FREE, WE CHECK block->start TO FIND ADDRESS, FREE IT, AND
+// NOTHING ELSE (DO NOT COMPACT FOR FRAGMENTATION) TOO MUCH COMPUTATION TO SHIFT
+// EVERY PAGE UP IF WE FREE A PAGE IN THE MIDDLE OF HEAP JUST TAKE NEXT PAGE
+// NEXT TIME IT CALLS PM_MALLOC
+
+// I LEFT FREE_LIST CODE IN CASE WE DECIDE TO USE IT TO KEEP TRACK
 
 /**
  * Insert a specified block of memory into the free list.
@@ -160,6 +176,9 @@ void initialize_heap() {
   primary_memory_page_list->count++;
 }
 
+// I CAN TAKE CARE OF THESE FUNCTIONS- WILL USE THEM TO CALCULATE HOW MUCH
+// FRAGMENTATION WE HAVE
+
 /**
  * Compute internal fragmentation in heap.
  *
@@ -207,4 +226,16 @@ double external_fragmentation() {
 
   fragmentation = (1 - (largest_free_block / all_free_memory)) * 100.0;
   return fragmentation;
+}
+
+// MOVE PAGES TO DISK USING FIFO OR LRU STRATEGY
+void move_to_disk() {}
+
+void main() {
+  // allocate memory until our heap is full
+  // call pm_malloc
+  // if pm_malloc sees we are full, it will call move_to_disk
+  // print heap list, move to disk, print heap again
+  // demonstrate pm_malloc works when we have enough memory in heap and
+  // demonstrate we can offload pages to "disk" when out of space
 }
