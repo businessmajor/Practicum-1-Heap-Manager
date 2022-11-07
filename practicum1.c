@@ -9,16 +9,11 @@
 #define HEAP_CAPACITY 8 * 1024 * 1024
 #define PAGE_SIZE 4096
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-// a page has header info and space for data
-typedef struct page {
-  page_header* header;
-  void* data;
-} page;
 
 // header has important metadata
 typedef struct page_header {
@@ -28,6 +23,12 @@ typedef struct page_header {
   bool is_free;  // true if block is free
   bool on_disk;  // true if page is on disk
 } page_header;
+
+// a page has header info and space for data
+typedef struct page {
+  page_header* header;
+  void* data;
+} page;
 
 // keep track of pages in primary memory (RAM), disk memory, and free list
 typedef struct page_list {
@@ -66,21 +67,20 @@ size_t heap_size = 0;  // keep track of how many PAGES are allocated in heap (1
  * Insert a specified block of memory into the free list.
  *
  * @param   block  pointer to the block we wish to insert
- */
 int free_list_insert(page* block) {}
+ */
 
 /**
  * Remove a specified block of memory from the free list.
  *
  * @param   block   pointer to the block we wish to remove
- */
 void free_list_remove(page* block) {}
+*/
 
 /**
  * Return the number of blocks in the free list.
  *
  * @return  count of blocks in free list
- */
 size_t free_list_length() {
   if (free_list == NULL) {
     return 0;
@@ -93,10 +93,10 @@ size_t free_list_length() {
   }
   return length;
 }
+*/
 
 /**
  * Print out contents of free list
- */
 void free_list_print() {
   page* curr = free_list;
   printf("free list:\n");
@@ -107,6 +107,7 @@ void free_list_print() {
     i++;
   }
 }
+*/
 
 /**
  * Allocate specified amount memory.
@@ -152,18 +153,20 @@ void pm_free(page* block) {
   return;
 }
 
+/**
+ *
 void initialize_heap() {
   // Pre-allocate 8MB "heap" memory from the static store
   heap[HEAP_CAPACITY];
   // Allocate all virtual memory structures within the block as well.
   // allocate memory for primary memory page list
-  primary_memory_page_list = (page_list*)pm_malloc(sizeof(page_list));
+  //primary_memory_page_list = (page_list*)pm_malloc(sizeof(page_list));
   // allocate memory for disk page list
-  disk_page_list = (page_list*)pm_malloc(sizeof(page_list));
+  //disk_page_list = (page_list*)pm_malloc(sizeof(page_list));
 
   // initialize primary and disk page list
-  primary_memory_page_list->count = 0;
-  disk_page_list->count = 0;
+  //primary_memory_page_list->count = 0;
+  //disk_page_list->count = 0;
   // initialize heap
   heap->header = (page_header*)pm_malloc(sizeof(page_header));
   heap->header->size = HEAP_CAPACITY / PAGE_SIZE;  // 2048 pages
@@ -175,6 +178,7 @@ void initialize_heap() {
   primary_memory_page_list->blocks[primary_memory_page_list->count] = heap;
   primary_memory_page_list->count++;
 }
+*/
 
 // I CAN TAKE CARE OF THESE FUNCTIONS- WILL USE THEM TO CALCULATE HOW MUCH
 // FRAGMENTATION WE HAVE
@@ -186,7 +190,7 @@ void initialize_heap() {
  *
  * @return  Degree of internal fragmentation as a percent of the whole memory
  * heap.
- */
+
 double internal_fragmentation() {
   double fragmentation = 0.0;
   page* block = heap;
@@ -201,6 +205,7 @@ double internal_fragmentation() {
   fragmentation = fragmentation / heap_size * 100.0;
   return fragmentation;
 }
+*/
 
 /**
  * Compute external fragmentation in heap.
@@ -209,7 +214,7 @@ double internal_fragmentation() {
  *
  * @return  Degree of external fragmentation as a percent of the whole memory
  * heap.
- */
+
 double external_fragmentation() {
   double fragmentation = 0.0;
   page* block = heap;
@@ -227,36 +232,35 @@ double external_fragmentation() {
   fragmentation = (1 - (largest_free_block / all_free_memory)) * 100.0;
   return fragmentation;
 }
+ */
 
 // MOVE PAGES TO DISK USING FIFO OR LRU STRATEGY
 void move_to_disk() {}
 
-void main() {
+int main() {
   // allocate memory until our heap is full
   // call pm_malloc
   // if pm_malloc sees we are full, it will call move_to_disk
   // print heap list, move to disk, print heap again
   // demonstrate pm_malloc works when we have enough memory in heap and
   // demonstrate we can offload pages to "disk" when out of space
+  return 0;
 }
 
-
-
-
 // WHAT WE NEED
+/*
 pm_malloc();
 pm_free();
 void move_to_disk();
 void move_to_heap();
-page* heap[HEAP_CAPACITY];               // array implementation
-page* disk_page_list[HEAP_CAPACITY];     // array implementation
-page* page_table[HEAP_CAPACITY];         // hash map implementation
+page* heap[HEAP_CAPACITY];            // array implementation
+page* disk_page_list[HEAP_CAPACITY];  // array implementation
+page* page_table[HEAP_CAPACITY];      // hash map implementation
 
-
-
-
-
-
-
-
-
+// WHAT IS LEFT
+//pm_free();
+void move_to_disk();                  // FIFO
+void move_to_heap();                  // FIFO
+page* disk_page_list[HEAP_CAPACITY];  // array implementation
+page* page_table[HEAP_CAPACITY];      // hash map implementation
+*/
