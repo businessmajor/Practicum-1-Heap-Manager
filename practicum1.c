@@ -17,7 +17,7 @@
 
 // header has important metadata
 typedef struct page_header {
-  void* start;   // pointer to start of page
+  void* start;   // pointer to page start address
   size_t size;   // how many bytes allocated in the page
   void* next;    // pointer to next page as part of this block
   bool is_free;  // true if block is free
@@ -155,18 +155,17 @@ void pm_free(page* block) {
 
 /**
  *
+ * */
 void initialize_heap() {
   // Pre-allocate 8MB "heap" memory from the static store
   heap[HEAP_CAPACITY];
   // Allocate all virtual memory structures within the block as well.
-  // allocate memory for primary memory page list
-  //primary_memory_page_list = (page_list*)pm_malloc(sizeof(page_list));
   // allocate memory for disk page list
-  //disk_page_list = (page_list*)pm_malloc(sizeof(page_list));
+  disk_page_list = (page_list*)pm_malloc(sizeof(page_list));
 
   // initialize primary and disk page list
-  //primary_memory_page_list->count = 0;
-  //disk_page_list->count = 0;
+  // primary_memory_page_list->count = 0;
+  // disk_page_list->count = 0;
   // initialize heap
   heap->header = (page_header*)pm_malloc(sizeof(page_header));
   heap->header->size = HEAP_CAPACITY / PAGE_SIZE;  // 2048 pages
@@ -178,7 +177,6 @@ void initialize_heap() {
   primary_memory_page_list->blocks[primary_memory_page_list->count] = heap;
   primary_memory_page_list->count++;
 }
-*/
 
 // I CAN TAKE CARE OF THESE FUNCTIONS- WILL USE THEM TO CALCULATE HOW MUCH
 // FRAGMENTATION WE HAVE
