@@ -239,3 +239,24 @@ void main() {
   // demonstrate pm_malloc works when we have enough memory in heap and
   // demonstrate we can offload pages to "disk" when out of space
 }
+
+
+
+
+// WHAT WE NEED
+pm_malloc();
+pm_free();
+void move_to_disk();
+void move_to_heap();
+page* heap[HEAP_CAPACITY];               // array implementation
+page* disk_page_list[HEAP_CAPACITY];     // array implementation
+page* page_table[HEAP_CAPACITY];         // hash map implementation
+
+
+
+
+
+
+
+
+
