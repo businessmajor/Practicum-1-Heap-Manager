@@ -1,7 +1,7 @@
 #include "page_table.h"
 
-page_table* hashArray[MAX_PAGES];  // create hashArray with defined size
-page_table* dummyItem;
+page_table_t* hash_arr[MAX_PAGES];  // create hash_arr with defined size
+page_table_t* dummyItem;
 int page_fault_cnt;      // page fault count
 int cap = 4;             // sample storage capacity value = 4
 int p[100];              // page sequence
@@ -14,7 +14,7 @@ int pg_in_storage[100];  // pages that are in storage
  * @param page page key
  * @return int
  */
-int hashCode(int page) {
+int hash_code(int page) {
   return page % HEAP_CAPACITY;
 }
 
@@ -22,76 +22,76 @@ int hashCode(int page) {
  * Search for the frame number with a given page key
  *
  * @param page page key
- * @return page_table*
+ * @return page_table_t*
  */
-page_table* get_frame(int page) {
+page_table_t* get_frame(int page) {
   // get the hash code
-  int hashIndex = hashCode(page);
+  int hash_idx = hash_code(page);
 
   // move in array that is empty
-  while (hashArray[hashIndex] != NULL) {
-    if (hashArray[hashIndex]->page == page)
-      return hashArray[hashIndex];
+  while (hash_arr[hash_idx] != NULL) {
+    if (hash_arr[hash_idx]->page_id == page)
+      return hash_arr[hash_idx];
 
     // next page
-    ++hashIndex;
+    ++hash_idx;
 
     // return to start of table
-    hashIndex %= HEAP_CAPACITY;
+    hash_idx %= HEAP_CAPACITY;
   }
 
   return NULL;
 }
 
 /**
- * Insert page and frame number in page_table
+ * Insert page and frame number in page_table_t
  *
  * @param page
  * @param frame
  */
 void insert_page(page* page, int frame) {
-  // allocate heap memory for each item in page_table
-  page_table* item = (page_table*)malloc(sizeof(page_table));
+  // allocate heap memory for each item in page_table_t
+  page_table_t* item = (page_table_t*)malloc(sizeof(page_table_t));
 
   // assign page & frame values
-  item->page = page;
+  item->page_id = page;
   item->frame = frame;
 
   // get the hash code
-  int hashIndex = hashCode(page);
+  int hash_idx = hash_code(page);
 
   // look for an empty or remove page line
-  while (hashArray[hashIndex] != NULL && hashArray[hashIndex]->page != -1) {
+  while (hash_arr[hash_idx] != NULL && hash_arr[hash_idx]->page_id != -1) {
     // next page
-    ++hashIndex;
+    ++hash_idx;
 
     // return to start of table
-    hashIndex %= HEAP_CAPACITY;
+    hash_idx %= HEAP_CAPACITY;
   }
 
-  hashArray[hashIndex] = item;
+  hash_arr[hash_idx] = item;
 }
 
 /**
- * Delete page and frame line in page_table
+ * Delete page and frame line in page_table_t
  *
  * @param item
- * @return page_table*
+ * @return page_table_t*
  */
-page_table* delete_pf_pair(page_table* item) {
+page_table_t* delete_pf_pair(page_table_t* item) {
   // get the page value
-  int page = item->page;
+  int page = item->page_id;
 
   // get hash code
-  int hashIndex = hashCode(page);
+  int hash_idx = hash_code(page);
 
   // check in the array until empty
-  while (hashArray[hashIndex] != NULL) {
-    if (hashArray[hashIndex]->page == page) {
-      page_table* temp = hashArray[hashIndex];
+  while (hash_arr[hash_idx] != NULL) {
+    if (hash_arr[hash_idx]->page_id == page) {
+      page_table_t* temp = hash_arr[hash_idx];
 
       // assign a dummy item at removed position
-      hashArray[hashIndex] = dummyItem;
+      hash_arr[hash_idx] = dummyItem;
 
       // free heap memory - cant free because this is page table
       // free(item);
@@ -99,25 +99,25 @@ page_table* delete_pf_pair(page_table* item) {
     }
 
     // check next cell position
-    ++hashIndex;
+    ++hash_idx;
 
     // return to start of table
-    hashIndex %= HEAP_CAPACITY;
+    hash_idx %= HEAP_CAPACITY;
   }
 
   return NULL;
 }
 
 /**
- * @brief Print contents of page_table
+ * @brief Print contents of page_table_t
  *
  */
 void show_page_table() {
   int i = 0;
 
   for (i = 0; i < HEAP_CAPACITY; i++) {
-    if (hashArray[i] != NULL)
-      printf(" (%d,%d)", hashArray[i]->page, hashArray[i]->frame);
+    if (hash_arr[i] != NULL)
+      printf(" (%d,%d)", hash_arr[i]->page_id, hash_arr[i]->frame);
     else
       printf(" ~~ ");
   }
@@ -126,9 +126,9 @@ void show_page_table() {
 }
 
 // checks if item is found in page table
-void page_found_display(page_table* item) {
+void page_found_display(page_table_t* item) {
   if (item != NULL)
-    printf("Page: %d | Frame: %d\n", item->page, item->frame);
+    printf("Page: %d | Frame: %d\n", item->page_id, item->frame);
   else
     printf("Frame not found!\n");
 }
@@ -212,16 +212,15 @@ int main() {
   // print heap list, move to disk, print heap again
   // demonstrate pm_malloc works when we have enough memory in heap and
   // demonstrate we can offload pages to "disk" when out of space
-*/
 
 // Hashmap checks:
-page_table* item1;
-page_table* item2;
-page_table* item3;
-page_table* item4;
-page_table* item5;
-page_table* item6;
-page_table* item7;
+page_table_t* item1;
+page_table_t* item2;
+page_table_t* item3;
+page_table_t* item4;
+page_table_t* item5;
+page_table_t* item6;
+page_table_t* item7;
 
 insert_page(1, 20);
 insert_page(42, 71);
@@ -278,3 +277,4 @@ printf("\n");
 
 return 0;
 }
+*/

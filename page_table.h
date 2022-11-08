@@ -13,11 +13,10 @@
 
 // header has important metadata
 typedef struct page_header {
-  void* address;  // pointer to page start address (start of header)
-  size_t size;    // how many bytes allocated in the page
-  void* next;     // pointer to next page as part of this block
-  bool is_free;   // true if page is free
-  bool on_disk;   // true if page is on disk
+  int page_id;   // unique page id
+  size_t size;   // how many bytes allocated in the page
+  bool is_free;  // true if page is free
+  bool on_disk;  // true if page is on disk
 } page_header;
 
 // a page has a header info and space for data
@@ -28,7 +27,7 @@ typedef struct page {
 } page;
 
 // keep track of pages in primary memory (RAM) and disk memory
-typedef struct page_table {
-  int page;
+typedef struct page_table_t {
+  int page_id;
   int frame;
-} page_table;
+} page_table_t;
