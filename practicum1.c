@@ -55,20 +55,18 @@ page* pm_malloc(size_t size) {
     page* curr = &heap[i * PAGE_SIZE];
     printf("Current page address: %p\n", (void*)curr);
     printf("ye1ehaw\n");
-    if (curr->header->is_free) {  // <---- SEGFAULT HERE
+    if (curr->is_free) {  // <---- SEGFAULT HERE
       printf("yeeh2aw\n");
-      curr->header->is_free = false;
+      curr->is_free = false;
       printf("yeeha3w\n");
-      curr->header->size = size;
+      curr->size = size;
       printf("yee4haw\n");
       // curr->header->address = curr;
-      curr->header->on_disk = false;
-      printf("ye5ehaw\n");
-      curr->data = BLOCK_DATA(curr);
+      curr->on_disk = false;
       printf("yeeh6aw\n");
-      if (!curr->header->page_id) {
+      if (!curr->page_id) {
         printf("ye7ehaw\n");
-        curr->header->page_id = page_id;
+        curr->page_id = page_id;
         printf("ye8ehaw\n");
         page_id++;
       }
@@ -92,11 +90,9 @@ void pm_free(page* block) {
   if (block == NULL) {
     return;
   }
-  block->header->is_free = true;
-  block->header->size = 0;
-  // block->header->address = NULL;
-  block->header->on_disk = false;
-  block->data = NULL;
+  block->is_free = true;
+  block->size = 0;
+  block->on_disk = false;
   --heap_pages_in_use;
 
   return;
@@ -112,13 +108,18 @@ void initialize_heap() {
 
   // segment heap into pages
   for (int i = 0; i < MAX_PAGES; i++) {
+    printf("1\n");
     page* curr = &heap[i];
-    // curr->header = BLOCK_HEADER(curr);
-    curr->header->is_free = true;
-    curr->header->size = 0;
-    // curr->header->address = NULL;
-    curr->header->on_disk = false;
-    curr->header->page_id = i;
+    printf("2\n");
+    curr->is_free = true;  // <---- SEGFAULT HERE
+    printf("3\n");
+    curr->size = 0;
+    printf("4\n");
+    // curr->address = NULL;
+    curr->on_disk = false;
+    printf("5\n");
+    curr->page_id = i;
+    printf("6\n");
     // curr->data = NULL;
   }
 
@@ -214,7 +215,7 @@ void print_heap() {
   printf("Heap contents:\n");
   int i = 0;
   while (curr) {
-    printf("(%d) <%p> (size: %ld)\n", i, (void*)curr, curr->header->size);
+    printf("(%d) <%p> (size: %ld)\n", i, (void*)curr, curr->size);
     ++curr;
     i++;
   }

@@ -12,18 +12,11 @@
 #endif
 
 // header has important metadata
-typedef struct page_header {
+typedef struct page {
   int page_id;   // unique page id
   size_t size;   // how many bytes allocated in the page
   bool is_free;  // true if page is free
   bool on_disk;  // true if page is on disk
-} page_header;
-
-// a page has a header info and space for data
-// this struct is 16 bytes
-typedef struct page {
-  page_header* header;
-  void* data;
 } page;
 
 // keep track of pages in primary memory (RAM) and disk memory
