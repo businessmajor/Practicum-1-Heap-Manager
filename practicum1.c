@@ -19,6 +19,7 @@
 page heap[MAX_PAGES];
 size_t heap_pages_in_use = 0;  // keep track of how many PAGES are allocated in
                                // heap (1 page = 4096 KB allocated)
+page disk_backing_store[MAX_PAGES];
 page_table_t*
     page_table;   // keep track of pages in primary and secondary memory
 int page_id = 0;  // unique page id for each page in heap (starts at
@@ -288,6 +289,6 @@ page* page_table[HEAP_CAPACITY];      // hash map implementation
 //pm_free();
 void move_to_disk();                  // FIFO
 void move_to_heap();                  // FIFO
-page* disk_page_list[HEAP_CAPACITY];  // array implementation
-page* page_table[HEAP_CAPACITY];      // hash map implementation
+page disk_page_list[HEAP_CAPACITY];  // array implementation
+page page_table[HEAP_CAPACITY];      // hash map implementation
 */
