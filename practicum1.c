@@ -16,14 +16,14 @@
  *******GLOBAL VARIABLES*******
  ******************************/
 // Pre-allocate 8MB "heap" memory from the static store with room for metadata
-page* heap[MAX_PAGES];
+page heap[MAX_PAGES];
 size_t heap_pages_in_use = 0;  // keep track of how many PAGES are allocated in
                                // heap (1 page = 4096 KB allocated)
 page_table_t*
-    page_table;           // keep track of pages in primary and secondary memory
-int page_id = MAX_PAGES;  // unique page id for each page in heap (starts at
-                          // MAX_PAGES because primary memory starts with pages
-                          // 0 - 2047 and disk starts with pages 2048 - 4095)
+    page_table;   // keep track of pages in primary and secondary memory
+int page_id = 0;  // unique page id for each page in heap (starts at
+                  // MAX_PAGES because primary memory starts with pages
+                  // 0 - 2047 and disk starts with pages 2048 - 4095)
 
 /**
  * Allocate specified amount memory.
@@ -55,7 +55,7 @@ page* pm_malloc(size_t size) {
   // first fit algorithm
   for (int i = 0; i < MAX_PAGES; i++) {
     page* curr = &heap[i];
-    printf("Current page address: %p\n", (void*)curr);
+    // printf("Current page address: %p\n", (void*)curr);
     if (curr->is_free) {  // <---- SEGFAULT (was) HERE ;)
       curr->is_free = false;
       curr->size = size;
@@ -64,6 +64,8 @@ page* pm_malloc(size_t size) {
         curr->page_id = page_id;
         page_id++;
       }
+      // printf("Allocated page %d at address %p\n", curr->page_id,
+      // (void*)curr);
       return curr;
     }
   }
@@ -85,7 +87,7 @@ void pm_free(page* block) {
   block->is_free = true;
   block->size = 0;
   block->on_disk = false;
-  --heap_pages_in_use;
+  heap_pages_in_use--;
 
   return;
 }
@@ -98,7 +100,7 @@ void initialize_heap() {
   // segment heap into pages
   for (int i = 0; i < MAX_PAGES; i++) {
     page* curr = &heap[i];
-    curr->is_free = true;  // <---- SEGFAULT HERE
+    curr->is_free = true;
     curr->size = 0;
     // curr->address = NULL;
     curr->on_disk = false;
@@ -119,6 +121,7 @@ void initialize_heap() {
   printf("Max capacity: \t\t%d bytes\n", HEAP_CAPACITY);
   printf("Page size: \t\t%d bytes\n", PAGE_SIZE);
   printf("Max number of pages: \t%d pages\n", HEAP_CAPACITY / PAGE_SIZE);
+  printf("Heap pages in use: %zu\n", heap_pages_in_use);
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   printf("\n\n");
 }
@@ -133,22 +136,22 @@ void initialize_heap() {
  *
  * @return  Degree of internal fragmentation as a percent of the whole memory
  * heap.
-
+ */
 double internal_fragmentation() {
+  int i = 0;
   double fragmentation = 0.0;
-  page* block = heap;
-  size_t heap_pages_in_use = 0;
+  page* curr = heap;
+  // size_t heap_pages_in_use = 0;
 
-  while (block != NULL) {
-    fragmentation += block->size;
-    heap_pages_in_use += block->size;
-    block = block->next;
+  while (curr && i < MAX_PAGES) {
+    fragmentation += curr->size;
+    // heap_pages_in_use++;
+    curr++;
+    i++;
   }
-
   fragmentation = fragmentation / heap_pages_in_use * 100.0;
   return fragmentation;
 }
-*/
 
 /**
  * Compute external fragmentation in heap.
@@ -157,25 +160,26 @@ double internal_fragmentation() {
  *
  * @return  Degree of external fragmentation as a percent of the whole memory
  * heap.
-
+ */
 double external_fragmentation() {
+  int i = 0;
   double fragmentation = 0.0;
-  page* block = heap;
+  page* curr = &heap[i];
   size_t largest_free_block = 0;
   size_t all_free_memory = 0;
 
-  while (block != NULL) {
-    if (block->size > largest_free_block) {
-      largest_free_block = block->size;
+  while (curr && i < MAX_PAGES) {
+    if (curr->size > largest_free_block) {
+      largest_free_block = curr->size;
     }
-    all_free_memory += block->size;
-    block = block->next;
+    all_free_memory += curr->size;
+    ++curr;
+    i++;
   }
 
   fragmentation = (1 - (largest_free_block / all_free_memory)) * 100.0;
   return fragmentation;
 }
- */
 
 void move_to_disk() {
   // find page to move to disk
@@ -191,14 +195,25 @@ void move_to_disk() {
 /**
  * Print out contents of heap
  */
-void print_heap() {
-  page* curr = &heap[0];
+void print_allocated_statistics() {
+  int i = 0;
+  int bytes = 0;
+  page* curr = &heap[i];
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-  printf("Heap contents:\n");
-  while (curr) {
-    printf("%d) <%p> (size: %ld)\n", curr->page_id, (void*)curr, curr->size);
+  printf("Allocated heap pages:\n");
+  while (curr && i < MAX_PAGES) {
+    if (!curr->is_free) {
+      printf("Page %d) <%p> \t(size: %ld)\n", curr->page_id, (void*)curr,
+             curr->size);
+      bytes += curr->size;
+    }
     ++curr;
+    ++i;
   }
+  printf("\nTotal bytes allocated: \t%d\n", bytes);
+  printf("Total allocated pages: \t%zu\n", heap_pages_in_use);
+  printf("Wasted bytes: \t\t%lu\n", (heap_pages_in_use * PAGE_SIZE) - bytes);
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 }
 
 int main() {
@@ -218,20 +233,43 @@ int main() {
   printf("Testing memory allocation...\n");
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   printf("Calling pm_malloc(0) should return NULL (0x0): ");
-  printf("%p\n", (void*)pm_malloc(0));
+  printf("%p\n\n", (void*)pm_malloc(0));
 
   printf("Allocating 10 pages of memory...\n");
   for (int i = 0; i < 10; i++) {
     page* block = pm_malloc(i * 69 + 420);
-    printf("Page %d address: %p\n", block->page_id, (void*)block);
+    printf("Allocated page %d: <%p> (size: %ld)\n", block->page_id,
+           (void*)block, block->size);
   }
-  // printf("%p", (void*)pm_malloc(0));
-  // printf("%p", (void*)pm_malloc(4000));
-  // printf("\n\n");
-  // printf("Heap pages in use: %d\n", heap_pages_in_use);
-  // print_heap();
+  printf("Heap pages in use: %zu\n\n", heap_pages_in_use);
+  print_allocated_statistics();
+  // printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
 
-  // print heap list, move to disk, print heap again
+  printf("Allocating 10 more pages of memory...\n");
+  for (int i = 0; i < 10; i++) {
+    page* block = pm_malloc(i * 60 + 32);
+    printf("Allocated page %d: <%p> (size: %ld)\n", block->page_id,
+           (void*)block, block->size);
+  }
+  printf("Heap pages in use: %zu\n\n", heap_pages_in_use);
+  print_allocated_statistics();
+
+  printf("Freeing heap...\n");
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  for (int i = 0; i < MAX_PAGES; i++) {
+    if (heap[i].is_free) {
+      continue;
+    }
+    pm_free(&heap[i]);
+    printf("Freed page %d: <%p> (size: %ld)\n", heap[i].page_id,
+           (void*)&heap[i], heap[i].size);
+  }
+  printf("Heap pages in use: %zu\n\n", heap_pages_in_use);
+  print_allocated_statistics();
+
+  printf("\nFragmentation statistics:\n");
+  printf("Internal fragmentation: %f%%\n", internal_fragmentation());
+  printf("External fragmentation: %f%%\n", external_fragmentation());
 
   return 0;
 }
