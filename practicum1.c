@@ -15,7 +15,8 @@
 /******************************
  *******GLOBAL VARIABLES*******
  ******************************/
-page* heap;
+// Pre-allocate 8MB "heap" memory from the static store with room for metadata
+page* heap[MAX_PAGES];
 size_t heap_pages_in_use = 0;  // keep track of how many PAGES are allocated in
                                // heap (1 page = 4096 KB allocated)
 page_table_t*
@@ -32,17 +33,19 @@ int page_id = MAX_PAGES;  // unique page id for each page in heap (starts at
  * @return  Pointer to the requested amount of memory.
  **/
 page* pm_malloc(size_t size) {
+  // printf("pm_malloc called with size: %zu\n", size);
   // check null size, too small, or too big (max allocable is 4096 - metadata)
   if (!size || size < 1 || size > PAGE_SIZE - sizeof(page)) {
-    printf("bad size\n");
+    // printf(
+    //     "Bad size! Either null, less than 1, or greater than max allocable "
+    //     "(4080 bytes)\n");
     return NULL;
   }
   // check if we have enough space (in pages) in heap
   if (heap_pages_in_use + 1 > MAX_PAGES) {
-    printf("heap full\n");
+    // printf("heap full\n");
     return NULL;
   }
-  printf("yeehaw\n");
   heap_pages_in_use++;
 
   // find first free page in heap
@@ -51,31 +54,20 @@ page* pm_malloc(size_t size) {
   // if we don't find a free page, return NULL
   // first fit algorithm
   for (int i = 0; i < MAX_PAGES; i++) {
-    printf("yee0haw\n");
-    page* curr = &heap[i * PAGE_SIZE];
+    page* curr = &heap[i];
     printf("Current page address: %p\n", (void*)curr);
-    printf("ye1ehaw\n");
-    if (curr->is_free) {  // <---- SEGFAULT HERE
-      printf("yeeh2aw\n");
+    if (curr->is_free) {  // <---- SEGFAULT (was) HERE ;)
       curr->is_free = false;
-      printf("yeeha3w\n");
       curr->size = size;
-      printf("yee4haw\n");
-      // curr->header->address = curr;
       curr->on_disk = false;
-      printf("yeeh6aw\n");
       if (!curr->page_id) {
-        printf("ye7ehaw\n");
         curr->page_id = page_id;
-        printf("ye8ehaw\n");
         page_id++;
       }
-      printf("yee9haw\n");
       return curr;
     }
-    printf("yee10haw\n");
   }
-  printf("yee11haw\n");
+  printf("No free pages in heap\n");
   return NULL;
 }
 
@@ -103,23 +95,14 @@ void pm_free(page* block) {
  *
  */
 void initialize_heap() {
-  // Pre-allocate 8MB "heap" memory from the static store with room for metadata
-  heap[MAX_PAGES];
-
   // segment heap into pages
   for (int i = 0; i < MAX_PAGES; i++) {
-    printf("1\n");
     page* curr = &heap[i];
-    printf("2\n");
     curr->is_free = true;  // <---- SEGFAULT HERE
-    printf("3\n");
     curr->size = 0;
-    printf("4\n");
     // curr->address = NULL;
     curr->on_disk = false;
-    printf("5\n");
     curr->page_id = i;
-    printf("6\n");
     // curr->data = NULL;
   }
 
@@ -128,7 +111,6 @@ void initialize_heap() {
   // track pages in secondary memory by accessing swap file
   // initialize page table
   // initialize_page_table();
-
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   printf("Heap initialized.\n");
   // printf("Address: %p\n", (void*)heap);
@@ -136,7 +118,7 @@ void initialize_heap() {
   printf("End of heap address: \t%p\n", (void*)&heap[8388608]);
   printf("Max capacity: \t\t%d bytes\n", HEAP_CAPACITY);
   printf("Page size: \t\t%d bytes\n", PAGE_SIZE);
-  printf("Max number of pages: \t%d\n", HEAP_CAPACITY / PAGE_SIZE);
+  printf("Max number of pages: \t%d pages\n", HEAP_CAPACITY / PAGE_SIZE);
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   printf("\n\n");
 }
@@ -210,14 +192,12 @@ void move_to_disk() {
  * Print out contents of heap
  */
 void print_heap() {
-  page* curr = heap;
+  page* curr = &heap[0];
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   printf("Heap contents:\n");
-  int i = 0;
   while (curr) {
-    printf("(%d) <%p> (size: %ld)\n", i, (void*)curr, curr->size);
+    printf("%d) <%p> (size: %ld)\n", curr->page_id, (void*)curr, curr->size);
     ++curr;
-    i++;
   }
 }
 
@@ -234,12 +214,17 @@ int main() {
   initialize_heap();
   // allocate memory until our heap is full
   /**
+   */
+  printf("Testing memory allocation...\n");
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  printf("Calling pm_malloc(0) should return NULL (0x0): ");
+  printf("%p\n", (void*)pm_malloc(0));
 
+  printf("Allocating 10 pages of memory...\n");
   for (int i = 0; i < 10; i++) {
-    printf("Page %d address: %p\n", i, (void*)&heap[i * PAGE_SIZE]);
-    printf("%p", (void*)pm_malloc(i * 50));
+    page* block = pm_malloc(i * 69 + 420);
+    printf("Page %d address: %p\n", block->page_id, (void*)block);
   }
-  */
   // printf("%p", (void*)pm_malloc(0));
   // printf("%p", (void*)pm_malloc(4000));
   // printf("\n\n");
