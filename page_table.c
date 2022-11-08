@@ -19,6 +19,23 @@ int hash_code(int page) {
 }
 
 /**
+ * Initialize page table
+ *
+ */
+page_table_t* initialize_page_table() {
+  dummyItem = (page_table_t*)pm_malloc(sizeof(page_table_t));
+  dummyItem->page_id = -1;
+  dummyItem->frame = -1;
+
+  // initialize page table
+  for (int i = 0; i < MAX_PAGES; i++) {
+    hash_arr[i] = NULL;
+  }
+
+  return dummyItem;
+}
+
+/**
  * Search for the frame number with a given page key
  *
  * @param page page key
