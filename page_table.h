@@ -24,3 +24,6 @@ typedef struct page_table_t {
   int page_id;
   int frame;
 } page_table_t;
+
+void fifo();
+void lru();

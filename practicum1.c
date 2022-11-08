@@ -56,7 +56,6 @@ page* pm_malloc(size_t size) {
   // first fit algorithm
   for (int i = 0; i < MAX_PAGES; i++) {
     page* curr = &heap[i];
-    // printf("Current page address: %p\n", (void*)curr);
     if (curr->is_free) {  // <---- SEGFAULT (was) HERE ;)
       curr->is_free = false;
       curr->size = size;
