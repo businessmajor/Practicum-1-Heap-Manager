@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <random.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +26,5 @@ typedef struct page_table_t {
   int frame;
 } page_table_t;
 
-void pm_malloc();
 void fifo();
 void lru();

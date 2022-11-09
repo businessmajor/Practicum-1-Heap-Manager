@@ -10,20 +10,7 @@
 #define PAGE_SIZE 4096                 // 4 KB page size
 #define MAX_PAGES 2048  // 2048 pages (4 KB each) fit in our heap (8 MB)
 
-#include "page_table.c"
-
-page_table_t* hash_arr[MAX_PAGES];  // create hash_arr with defined size
-page_table_t* dummy_item;
-int page_fault_cnt;           // page fault count
-int cap = 5;                  // sample storage capacity value = 5
-int p[100];                   // page sequence
-int pg_seq_size_fifo = 15;    // sample page sequence size = 15
-int pg_seq_size_lru = 15;     // sample page sequence size = 15
-int pg_in_storage_fifo[100];  // fifo pages that are in storage
-int pg_in_storage_lru[100];   // lru pages that are in storage
-void fifo();
-void lru();
-void move_to_disk();
+#include "page_table.h"
 
 /******************************
  *******GLOBAL VARIABLES*******
@@ -56,11 +43,9 @@ page* pm_malloc(size_t size) {
     return NULL;
   }
   // check if we have enough space (in pages) in heap
-  // page to disk swap
   if (heap_pages_in_use + 1 > MAX_PAGES) {
-    printf("No more space in heap! Swapping pages to disk...\n");
-    // swap pages to disk
-    move_to_disk();
+    // printf("heap full\n");
+    return NULL;
   }
   heap_pages_in_use++;
 
@@ -112,8 +97,6 @@ void pm_free(page* block) {
  *
  */
 void initialize_heap() {
-  // initialize page table
-  page_table = initialize_page_table();
   // segment heap into pages
   for (int i = 0; i < MAX_PAGES; i++) {
     page* curr = &heap[i];
@@ -198,34 +181,15 @@ double external_fragmentation() {
   return fragmentation;
 }
 
-/**
- * Choose which algorithm to use to move page to disk.
- *
- * @param choice
- */
-void choose_algorithm(int choice) {
-  switch (choice) {
-    case 1:
-      fifo();
-      break;
-    case 2:
-      lru();
-      break;
-    default:
-      printf("Invalid choice. Please try again.\n");
-      move_to_disk();
-      break;
-  }
-  return;
-}
-
 void move_to_disk() {
-  printf("Choose which algorithm to use to move page to disk:\n");
-  printf("1) FIFO\n");
-  printf("2) LRU\n");
-  int choice;
-  scanf("%d", &choice);
-  choose_algorithm(choice);
+  // find page to move to disk
+  // move page to disk
+  // update page table
+  // update disk page list
+  // update heap
+  // update heap_pages_in_use
+  // update page fault count
+  return;
 }
 
 /**
@@ -235,8 +199,8 @@ void print_allocated_statistics() {
   int i = 0;
   int bytes = 0;
   page* curr = &heap[i];
+  printf("Allocation Statistics:\n");
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-  printf("Allocated heap pages:\n");
   while (curr && i < MAX_PAGES) {
     if (!curr->is_free) {
       printf("Page %d) <%p> \t(size: %ld)\n", curr->page_id, (void*)curr,
@@ -246,6 +210,40 @@ void print_allocated_statistics() {
     ++curr;
     ++i;
   }
+  if (bytes == 0) {
+    printf("No pages allocated.\n\n");
+  }
+  printf("\nTotal bytes allocated: \t%d\n", bytes);
+  printf("Total allocated pages: \t%zu\n", heap_pages_in_use);
+  printf("Wasted bytes: \t\t%lu\n", (heap_pages_in_use * PAGE_SIZE) - bytes);
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+}
+
+/**
+ * Special case: Heap is full, print out contents of heap
+ */
+void alloc_and_print_max_statistics() {
+  int i = 0;
+  int bytes = 0;
+  page* curr;
+  = &heap[i];
+
+  printf("Allocation Statistics:\n");
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  while (i < MAX_PAGES) {
+    // generate a random number
+
+    curr = pm_malloc();
+
+    if (!curr->is_free) {
+      bytes += curr->size;
+    }
+    ++curr;
+    ++i;
+  }
+  if (bytes == 0) {
+    printf("No pages allocated.\n\n");
+  }
   printf("\nTotal bytes allocated: \t%d\n", bytes);
   printf("Total allocated pages: \t%zu\n", heap_pages_in_use);
   printf("Wasted bytes: \t\t%lu\n", (heap_pages_in_use * PAGE_SIZE) - bytes);
@@ -253,106 +251,6 @@ void print_allocated_statistics() {
 }
 
 int main() {
-  /*
-
-  // Hashmap checks:
-  page_table_t* item1;
-  page_table_t* item2;
-  page_table_t* item3;
-
-  item1->page_id = 1;
-  item1->frame = 2;
-  item2->page_id = 2;
-  item2->frame = 3;
-  item3->page_id = 3;
-  item3->frame = 4;
-
-  insert_page(item1->page_id, item1->frame);
-  insert_page(42, 71);
-  insert_page(2, 31);
-  insert_page(13, 22);
-  insert_page(37, 5);
-  // insert_page(2, 25);
-  insert_page(29, 34);
-  insert_page(32, 4);
-
-  // show_page_table();
-
-  // check page table functions here:
-  page_found_display(get_frame(37));  // check frame value of page 37
-  page_found_display(get_frame(2));   // check frame value of page 2
-  page_found_display(get_frame(32));  // check for frame value of page 32
-
-  item7 = get_frame(32);
-  delete_pf_pair(item7);              // delete page 32 page-frame pair
-  page_found_display(get_frame(32));  // check for frame value of page 32
-
-  // free heap memory when done with page_table
-  item1 = get_frame(1);
-  item2 = get_frame(42);
-  item3 = get_frame(2);
-  item4 = get_frame(13);
-  item5 = get_frame(37);
-  item6 = get_frame(29);
-  delete_pf_pair(item1);
-  delete_pf_pair(item2);
-  delete_pf_pair(item3);
-  delete_pf_pair(item4);
-  delete_pf_pair(item5);
-  // delete_pf_pair(get_frame(2));
-  delete_pf_pair(item6);
-
-  page_found_display(get_frame(37));  // check for frame value of page 32
-
-  // FIFO checks:
-  // input pages data
-  pg_in_storage_fifo[0] = 3;
-  pg_in_storage_fifo[1] = 8;
-  pg_in_storage_fifo[2] = 2;
-  pg_in_storage_fifo[3] = 3;
-  pg_in_storage_fifo[4] = 9;
-  pg_in_storage_fifo[5] = 1;
-  pg_in_storage_fifo[6] = 6;
-  pg_in_storage_fifo[7] = 3;
-  pg_in_storage_fifo[8] = 8;
-  pg_in_storage_fifo[9] = 9;
-  pg_in_storage_fifo[10] = 3;
-  pg_in_storage_fifo[11] = 6;
-  pg_in_storage_fifo[12] = 2;
-  pg_in_storage_fifo[13] = 1;
-  pg_in_storage_fifo[14] = 3;
-
-  // FIFO method
-  fifo();
-  printf("\nTotal number of page faults: %d", page_fault_cnt);
-  printf("\n");
-
-  // LRU checks:
-  pg_in_storage_lru[0] = 3;
-  pg_in_storage_lru[1] = 8;
-  pg_in_storage_lru[2] = 2;
-  pg_in_storage_lru[3] = 3;
-  pg_in_storage_lru[4] = 9;
-  pg_in_storage_lru[5] = 1;
-  pg_in_storage_lru[6] = 6;
-  pg_in_storage_lru[7] = 3;
-  pg_in_storage_lru[8] = 8;
-  pg_in_storage_lru[9] = 9;
-  pg_in_storage_lru[10] = 3;
-  pg_in_storage_lru[11] = 6;
-  pg_in_storage_lru[12] = 2;
-  pg_in_storage_lru[13] = 1;
-  pg_in_storage_lru[14] = 3;
-
-  // LRU method
-  lru();
-  printf("\nLRU: Total number of page faults: %d", page_fault_cnt);
-  printf("\n");
-
-  return 0;
-*/
-  ////////////////////////////////////////////////
-
   // allocate memory until our heap is full
   // call pm_malloc
   // if pm_malloc sees we are full, it will call move_to_disk
@@ -364,7 +262,8 @@ int main() {
   printf("Initializing heap...\n");
   initialize_heap();
   // allocate memory until our heap is full
-
+  /**
+   */
   printf("Testing memory allocation...\n");
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   printf("Calling pm_malloc(0) should return NULL (0x0): ");
@@ -401,6 +300,18 @@ int main() {
   }
   printf("Heap pages in use: %zu\n\n", heap_pages_in_use);
   print_allocated_statistics();
+
+  printf("Paging out using page table...\n");
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  // fill the heap to maximum capacity
+  for (int i = 0; i < MAX_PAGES; i++) {
+    if (page_table[i] == NULL) {
+      continue;
+    }
+    move_to_disk();
+    printf("Paged out page %d: <%p> (size: %ld)\n", page_table[i]->page_id,
+           (void*)page_table[i], page_table[i]->size);
+  }
 
   printf("\nFragmentation statistics:\n");
   printf("Internal fragmentation: %f%%\n", internal_fragmentation());
