@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /******************************
- ******MACROS AND GLOBAL*******
+ ******MACROS AND STRUCTS******
  ******************************/
 // define start of memory and adjustment for header overhead
 #define BLOCK_DATA(ptr) ((void*)((unsigned long)ptr + sizeof(page)))
@@ -31,7 +31,6 @@
 #define UPPER_LIMIT_FOR_TEST 4000
 #define LOWER_LIMIT_FOR_TEST 1028
 
-// header has important metadata
 typedef struct page {
   int page_id;   // unique page id
   size_t size;   // how many bytes allocated in the page
@@ -45,7 +44,6 @@ typedef struct pte {
   int frame;
 } pte;
 
-// forward declarations
 page* pm_malloc(size_t size);
 
 /******************************
@@ -59,14 +57,12 @@ pte* page_table;  // keep track of pages in primary and secondary memory
 page disk_list[MAX_PAGES];  // keep track of pages on disk (secondary memory)
 int page_id = 1;  // unique page id for each page in heap (start as 1 to avoid
                   // confusion with NULL or 0. 0 is NOT a valid page_id)
-// Reference:
-// https://www.programming9.com/programs/c-programs/285-page-replacement-programs-in-c
+
 pte* hash_arr[MAX_PAGES];  // create hash_arr with defined size
 pte* dummy_item;
 int page_fault_cnt;  // page fault count
 int cap = 5;         // sample storage capacity value = 5
 int p[100];          // page sequence
-// double waste;
 
 /**
  * Hash function for page table
@@ -207,15 +203,6 @@ void page_found_display(pte* item) {
     printf("Frame not found!\n");
 }
 
-// code implementation for FIFO page replacement
-/*
-int page_fault_cnt;      // page fault count
-int cap = 4;             // sample storage capacity value = 4
-int p[100];              // page sequence
-int pg_seq_size = 8;     // sample page sequence size = 8
-int pg_in_storage[100];  // pages that are in storage
-*/
-
 // helper method - initialize the capacity of page storage to value -1
 void initialize_cap() {
   // initialize page fault count
@@ -248,35 +235,6 @@ void showPages_cap() {
   for (i = 0; i < cap; i++) {
     if (p[i] != -1)
       printf(" %d", p[i]);
-  }
-}
-
-/**
- * FIFO Page replacement algorithm
- *
- */
-void fifo_demo() {
-  // initialize capacity/storage
-  initialize_cap();
-  int i, j;
-
-  // traverse 15 pages
-  for (i = 0; i < 15; i++) {
-    printf("\nFor %d :", heap[i].page_id);
-
-    if (isPageHit(heap[i].page_id)) {
-      printf("page hit!");
-    } else {
-      // ^returns 1. if memory cell is empty; 2. page is not in storage
-      for (j = 0; j < cap - 1; j++)
-        p[j] = p[j + 1];
-
-      p[j] = heap[i].page_id;
-
-      // increment page fault count
-      page_fault_cnt++;
-      showPages_cap();
-    }
   }
 }
 
@@ -374,7 +332,7 @@ void lru() {
 
 /**
  * Allocate specified amount memory.
- * ASSUMPTION: Nobody will request more than 4000 KB (page size - metadata)
+ * ASSUMPTION: Nobody will request more than 4080 KB (page size - metadata)
  *
  * @param   size    Amount of bytes to allocate.
  * @return  Pointer to the requested amount of memory.
@@ -396,10 +354,6 @@ page* pm_malloc(size_t size) {
   }
   heap_pages_in_use++;
 
-  // find first free page in heap
-  // iterate through heap until we find first free page
-  // if we find a free page, allocate it and return it
-  // if we don't find a free page, return NULL
   // first fit algorithm
   for (int i = 0; i < MAX_PAGES; i++) {
     page* curr = &heap[i];
@@ -458,11 +412,8 @@ void initialize_heap() {
   // heap will be an array of pages
   // track pages in primary memory by accessing heap
   // track pages in secondary memory by accessing swap file
-  // initialize page table
-  // initialize_page_table();
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   printf("Heap initialized.\n");
-  // printf("Address: %p\n", (void*)heap);
   printf("Start of heap address: \t%p\n", (void*)&heap[0]);
   printf("End of heap address: \t%p\n", (void*)&heap[8388608]);
   printf("Max capacity: \t\t%d bytes\n", HEAP_CAPACITY);

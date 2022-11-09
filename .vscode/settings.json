@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "algorithm": "c",
-        "memory": "c",
-        "page_table.h": "c"
-    }
-}
