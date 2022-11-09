@@ -9,6 +9,8 @@
 #define HEAP_CAPACITY 8 * 1024 * 1024  // 8 MB heap
 #define PAGE_SIZE 4096                 // 4 KB page size
 #define MAX_PAGES 2048  // 2048 pages (4 KB each) fit in our heap (8 MB)
+#define UPPER_LIMIT_FOR_TEST 4000
+#define LOWER_LIMIT_FOR_TEST 1028
 
 #include "page_table.h"
 
@@ -22,9 +24,8 @@ size_t heap_pages_in_use = 0;  // keep track of how many PAGES are allocated in
 page disk_backing_store[MAX_PAGES];
 page_table_t*
     page_table;   // keep track of pages in primary and secondary memory
-int page_id = 0;  // unique page id for each page in heap (starts at
-                  // MAX_PAGES because primary memory starts with pages
-                  // 0 - 2047 and disk starts with pages 2048 - 4095)
+int page_id = 1;  // unique page id for each page in heap (start as 1 to avoid
+                  // confusion with NULL or 0. 0 is NOT a valid page_id)
 
 /**
  * Allocate specified amount memory.
@@ -60,10 +61,8 @@ page* pm_malloc(size_t size) {
       curr->is_free = false;
       curr->size = size;
       curr->on_disk = false;
-      if (!curr->page_id) {
-        curr->page_id = page_id;
-        page_id++;
-      }
+      curr->page_id = page_id;
+      page_id++;
       // printf("Allocated page %d at address %p\n", curr->page_id,
       // (void*)curr);
       return curr;
@@ -225,26 +224,24 @@ void print_allocated_statistics() {
 void alloc_and_print_max_statistics() {
   int i = 0;
   int bytes = 0;
-  page* curr;
-  = &heap[i];
+  page* curr = &heap[i];
+
+  while (i < MAX_PAGES) {
+    // generate a random number
+    curr =
+        pm_malloc(rand() % (UPPER_LIMIT_FOR_TEST - LOWER_LIMIT_FOR_TEST + 1) +
+                  LOWER_LIMIT_FOR_TEST);
+    bytes += curr->size;
+    ++curr;
+    ++i;
+    if (i % 200 == 0) {
+      printf("Bytes allocated so far: %d\n", bytes);
+    }
+  }
 
   printf("Allocation Statistics:\n");
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-  while (i < MAX_PAGES) {
-    // generate a random number
-
-    curr = pm_malloc();
-
-    if (!curr->is_free) {
-      bytes += curr->size;
-    }
-    ++curr;
-    ++i;
-  }
-  if (bytes == 0) {
-    printf("No pages allocated.\n\n");
-  }
-  printf("\nTotal bytes allocated: \t%d\n", bytes);
+  printf("Total bytes allocated: \t%d\n", bytes);
   printf("Total allocated pages: \t%zu\n", heap_pages_in_use);
   printf("Wasted bytes: \t\t%lu\n", (heap_pages_in_use * PAGE_SIZE) - bytes);
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
@@ -304,14 +301,29 @@ int main() {
   printf("Paging out using page table...\n");
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   // fill the heap to maximum capacity
+  alloc_and_print_max_statistics();
+  // move_to_disk();
+  // printf("Paged out page %d: <%p> (size: %ld)\n", page_table[i]->page_id,
+  //        (void*)page_table[i], page_table[i]->size);
+  //}
+
+  // add all pages to the page table
   for (int i = 0; i < MAX_PAGES; i++) {
-    if (page_table[i] == NULL) {
-      continue;
-    }
-    move_to_disk();
-    printf("Paged out page %d: <%p> (size: %ld)\n", page_table[i]->page_id,
-           (void*)page_table[i], page_table[i]->size);
+    page_table[i] = (page_table_t){heap[i].page_id, &heap[i]};
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   printf("\nFragmentation statistics:\n");
   printf("Internal fragmentation: %f%%\n", internal_fragmentation());

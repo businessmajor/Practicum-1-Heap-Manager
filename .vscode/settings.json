@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "algorithm": "c",
-        "memory": "c"
+        "memory": "c",
+        "page_table.h": "c"
     }
 }
