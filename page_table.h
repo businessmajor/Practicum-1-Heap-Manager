@@ -25,5 +25,6 @@ typedef struct page_table_t {
   int frame;
 } page_table_t;
 
+void pm_malloc();
 void fifo();
 void lru();
