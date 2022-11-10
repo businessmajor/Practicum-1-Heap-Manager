@@ -67,11 +67,11 @@ int p[100];          // page sequence
 /**
  * Hash function for page table
  *
- * @param page page key
+ * @param int page_id
  * @return int
  */
-int hash_code(page* page) {
-  return page->page_id % HEAP_CAPACITY;
+int hash_code(int page_id) {
+  return page_id % (HEAP_CAPACITY);
 }
 
 /**
@@ -94,16 +94,16 @@ pte* initialize_page_table() {
 /**
  * Search for the frame number with a given page key
  *
- * @param page page
+ * @param int page_id
  * @return pte*
  */
-pte* get_frame(page* page) {
+pte* get_frame(int page_id) {
   // get the hash code
-  int hash_idx = hash_code(page);
+  int hash_idx = hash_code(page_id);
 
   // move in array that is empty
   while (hash_arr[hash_idx] != NULL) {
-    if (hash_arr[hash_idx]->page_id == page->page_id)
+    if (hash_arr[hash_idx]->page_id == page_id)
       return hash_arr[hash_idx];
 
     // next page
@@ -119,19 +119,19 @@ pte* get_frame(page* page) {
 /**
  * Insert page and frame number in pte
  *
- * @param page
+ * @param page_id
  * @param frame
  */
-void insert_page(page* page, int frame) {
+void insert_page_frame(int page_id, int frame) {
   // allocate heap memory for each item in pte
-  pte* pair = (pte*)malloc(sizeof(pair));
+  pte* pair = (pte*)malloc(sizeof(pte));
 
   // assign page & frame values
-  pair->page_id = page->page_id;
+  pair->page_id = page_id;
   pair->frame = frame;
 
   // get the hash code
-  int hash_idx = hash_code(page);
+  int hash_idx = hash_code(page_id);
 
   // look for an empty or remove page line
   while (hash_arr[hash_idx] != NULL && hash_arr[hash_idx]->page_id != -1) {
@@ -151,13 +151,13 @@ void insert_page(page* page, int frame) {
  * @param item
  * @return pte*
  */
-pte* delete_pf_pair(pte* pair) {
+pte* delete_pf_pair(int page_id) {
   // get hash code
-  int hash_idx = hash_code((page*)pair);
+  int hash_idx = hash_code(page_id);
 
   // check in the array until empty
   while (hash_arr[hash_idx] != NULL) {
-    if (hash_arr[hash_idx]->page_id == pair->page_id) {
+    if (hash_arr[hash_idx]->page_id == page_id) {
       pte* temp = hash_arr[hash_idx];
 
       // assign a dummy item at removed position
@@ -249,9 +249,9 @@ void fifo() {
 
   // traverse 15 pages
   for (i = 0; i < 10; i++) {
-    printf("\nFor %d :", heap[i].page_id);
+    printf("\nFIFO - For %d :", heap[i].page_id);
 
-    // simulated page hit
+    // simulated page hit for FIFO and LRU
     if (i == 7) {
       heap[i].page_id = 29;
     }
@@ -272,7 +272,6 @@ void fifo() {
   }
 }
 
-/*
 // LRU page replacement
 void lru() {
   int i, j, k, m;
@@ -284,17 +283,19 @@ void lru() {
   initialize_cap();
 
   // traverse the pages
-  for (i = 0; i < pg_seq_size_lru; i++) {
-    printf("\nLRU - For %d :", disk_list[i]);
+  for (i = 0; i < 10; i++) {
+    printf("\nLRU - For %d :", heap[i].page_id);
 
-    if (isPageHit(disk_list[i]) == false) {
+    if (isPageHit(heap[i].page_id)) {
+      printf("page hit!");
+    } else {
       // loop thru the
       for (j = 0; j < cap; j++) {
         x = p[j];
         found = false;
 
         for (k = i - 1; k >= 0; k--) {
-          if (x == disk_list[k]) {
+          if (x == heap[k].page_id) {
             l[j] = k;
             found = true;
             break;
@@ -316,19 +317,15 @@ void lru() {
       }
 
       // change the least recently used
-      p[idx] = disk_list[i];
+      p[idx] = heap[i].page_id;
 
       // - increment page fault count
       page_fault_cnt++;
 
       showPages_cap();
-    } else {
-      //      - page hit: page is in storage
-      printf("page hit!");
     }
   }
 }
-*/
 
 /**
  * Allocate specified amount memory.
@@ -571,100 +568,84 @@ int main() {
 
   // move_to_disk();
 
-  // FIFO checks:
-  /*
-    disk_list[0] = 3;
-    disk_list[1] = 8;
-    disk_list[2] = 2;
-    disk_list[3] = 3;
-    disk_list[4] = 9;
-    disk_list[5] = 1;
-    disk_list[6] = 6;
-    disk_list[7] = 3;
-    disk_list[8] = 8;
-    disk_list[9] = 9;
-    disk_list[10] = 3;
-    disk_list[11] = 6;
-    disk_list[12] = 2;
-    disk_list[13] = 1;
-    disk_list[14] = 3;
-    */
+  // Hashmap checks:
+  pte* item1;
+  pte* item2;
+  pte* item3;
 
+  printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  printf("Inserting page-frame values in page table\n");
+  insert_page_frame(heap[3].page_id, 20);
+  insert_page_frame(heap[8].page_id, 71);
+  insert_page_frame(heap[0].page_id, 31);
+  insert_page_frame(heap[2].page_id, 22);
+  insert_page_frame(heap[5].page_id, 5);
+  insert_page_frame(heap[11].page_id, 34);
+  insert_page_frame(heap[18].page_id, 4);
+  insert_page_frame(heap[1].page_id, 29);
+
+  // show_page_table();
+
+  // check page table functions here:
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  printf("Checking values of page table\n");
+  page_found_display(
+      get_frame(heap[3].page_id));  // check frame value of page 24
+  page_found_display(
+      get_frame(heap[8].page_id));  // check frame value of page 29
+  page_found_display(
+      get_frame(heap[0].page_id));  // check frame value of page 21
+  page_found_display(
+      get_frame(heap[2].page_id));  // check frame value of page 23
+  page_found_display(
+      get_frame(heap[5].page_id));  // check frame value of page 26
+  page_found_display(
+      get_frame(heap[11].page_id));  // check frame value of page 32
+  page_found_display(
+      get_frame(heap[18].page_id));  // check frame value of page 39
+  page_found_display(
+      get_frame(heap[1].page_id));  // check frame value of page 22
+  printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  printf("Delete pages #29, #26, #39 in page table\n");
+  item1 = get_frame(heap[8].page_id);
+  item2 = get_frame(heap[5].page_id);
+  item3 = get_frame(heap[18].page_id);
+  delete_pf_pair(item1->page_id);  // delete page 29 page-frame pair
+  delete_pf_pair(item2->page_id);  // delete page 26 page-frame pair
+  delete_pf_pair(item3->page_id);  // delete page 39 page-frame pair
+
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  printf("Re-checking values of page table\n");
+  page_found_display(
+      get_frame(heap[3].page_id));  // check frame value of page 24
+  page_found_display(
+      get_frame(heap[8].page_id));  // check frame value of page 29
+  page_found_display(
+      get_frame(heap[0].page_id));  // check frame value of page 21
+  page_found_display(
+      get_frame(heap[2].page_id));  // check frame value of page 23
+  page_found_display(
+      get_frame(heap[5].page_id));  // check frame value of page 26
+  page_found_display(
+      get_frame(heap[11].page_id));  // check frame value of page 32
+  page_found_display(
+      get_frame(heap[18].page_id));  // check frame value of page 39
+  page_found_display(
+      get_frame(heap[1].page_id));  // check frame value of page 22
+
+  printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  printf("FIFO page replacement method");
   // FIFO method
   fifo();
-  printf("\nTotal number of page faults: %d", page_fault_cnt);
+  printf("\nFIFO - Total number of page faults: %d", page_fault_cnt);
   printf("\n");
 
-  return 0;
-
-  /*
-    // Hashmap checks:
-    pte* item1;
-    pte* item2;
-    pte* item3;
-    pte* item4;
-    pte* item5;
-    pte* item6;
-    pte* item7;
-
-    insert_page(1, 20);
-    insert_page(42, 71);
-    insert_page(2, 31);
-    insert_page(13, 22);
-    insert_page(37, 5);
-    // insert_page(2, 25);
-    insert_page(29, 34);
-    insert_page(32, 4);
-
-    // show_page_table();
-
-    // check page table functions here:
-    page_found_display(get_frame(37));  // check frame value of page 37
-    page_found_display(get_frame(2));   // check frame value of page 2
-    page_found_display(get_frame(32));  // check for frame value of page 32
-
-    item7 = get_frame(32);
-    delete_pf_pair(item7);              // delete page 32 page-frame pair
-    page_found_display(get_frame(32));  // check for frame value of page 32
-
-    // free heap memory when done with page_table
-    item1 = get_frame(1);
-    item2 = get_frame(42);
-    item3 = get_frame(2);
-    item4 = get_frame(13);
-    item5 = get_frame(37);
-    item6 = get_frame(29);
-    delete_pf_pair(item1);
-    delete_pf_pair(item2);
-    delete_pf_pair(item3);
-    delete_pf_pair(item4);
-    delete_pf_pair(item5);
-    // delete_pf_pair(get_frame(2));
-    delete_pf_pair(item6);
-
-    page_found_display(get_frame(37));  // check for frame value of page 32
-
-
-  // LRU checks:
-  disk_list[0] = 3;
-  disk_list[1] = 8;
-  disk_list[2] = 2;
-  disk_list[3] = 3;
-  disk_list[4] = 9;
-  disk_list[5] = 1;
-  disk_list[6] = 6;
-  disk_list[7] = 3;
-  disk_list[8] = 8;
-  disk_list[9] = 9;
-  disk_list[10] = 3;
-  disk_list[11] = 6;
-  disk_list[12] = 2;
-  disk_list[13] = 1;
-  disk_list[14] = 3;
-
+  printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  printf("LRU page replacement method");
   // LRU method
   lru();
   printf("\nLRU: Total number of page faults: %d", page_fault_cnt);
   printf("\n");
-    */
+
+  return 0;
 }
